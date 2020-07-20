@@ -1,0 +1,387 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.3
+  kernelspec:
+    display_name: Julia 1.2.0
+    language: julia
+    name: julia-1.2
+---
+
+## Problem 1   
+Consider a table with 3 columns and 1000 rows, some of whose entries are
+missing. Denote by $A$ the set of rows with an entry in the first
+column, $B$ the set of rows with an entry in the second column, and $C$
+the set of rows with an entry in the third column. Use set notation
+(intersections, unions, and complements) to represent the following sets
+in terms of $A$, $B$, and $C$.
+
+(i) The set of rows with no missing entries
+
+(ii) The set of rows with all missing entries
+
+(iii) The set of rows with at least one entry present
+
+(iv) The set of rows with an entry in the first column and exactly one
+    other entry
+    
+    
+
+
+*Solution:*  
+(i)  $ A\cap B\cap C $    
+(ii) $ \complement(A\cup B\cup C)$     
+(iii) $ A\cup B\cup C $  
+(iv) $ A\cup ((\complement(B \cap C))\cap(B\cup C)) $
+
+
+## Problem 2 
+
+Each of 68 people is interviewed and scored on a scale from 0 to 10
+  in three different categories. A composite score is obtained for
+  each person by averaging the person's category scores. These data
+  are arranged into a $68 \times 4$ matrix $X$, so that each row consists
+  of a particular interviewee's category scores and composite score.   
+Find the determinant of $X' X$. 
+
+
+*Solution:*  
+<img src="p2.png" width=350px>
+
+
+## Problem 3
+
+(a) Does there exist a linearly dependent list of 10 vectors with the property that every sublist of length 9 is linearly independent?
+
+(b) Does there exist a linearly dependent list of 10 vectors with the property that there are exactly 21 ways to remove two vectors from the list to obtain a linearly independent list?
+
+
+*(DONE)Solution:*  
+(a)Yes.  
+The list could be {v1, v2, ...,v9, f(v1,...,v9)}, then every sublist of length 9 will be linear independent.  
+(b)Yes.    
+Suppose the groups are {v1,v2,f(v1,v2)} and {v4,v5,...,v9,f(v4,v5,...v9)}, then there are 3*7 = 21 ways to remove two vectors to make the remaining list linearly independent.
+
+
+## Problem 4
+
+A **pangram** is a sentence which contains every letter (they are useful for demonstrating fonts). *The quick brown fox jumps over the lazy dog* is a famous example of a pangram. 
+
+Write a Julia function to check whether a given string is a pangram. 
+
+Hint: you can get the alphabet as a `Set` by doing `Set('a':'z')`. Also, note the characters (single quotes) and strings (double quotes) are different in Julia. 
+
+```{julia}
+
+s1 = "The quick brown fox jumps over the lazy dog"
+s2 = "The quick brown fox jumps the lazy dog"
+
+function checkPangram(s)
+    collect(s) #change string to array of characters
+    
+    for chr in Set('a':'z')
+        if !(chr in collect(s))
+            return false
+        end
+    end
+    return true
+end
+
+#checkPangram(s1)
+
+```
+
+
+## Problem 5
+
+In the game of Set, every card has four features:
+
+**Number**. 1, 2, or 3  
+**Color**. purple, red, or green  
+**Shape**. oval, squiggle, or diamond  
+**Shading**. striped, solid, or outline
+
+<img src="set.png" width=350px>
+
+There is exactly one card for every possible combination of attributes (for example there's exactly one card with 2 red solid squiggles), so there are 81 cards in total. 
+
+Three cards are said to form a set if for each feature, the three cards are either all the same or all different. For example, the cards shown above form a set because their shapes are all different, their shading is all different, the numbers are all different, and the colors are all different. 
+
+The cards are shuffled, and 12 cards are dealt face up for all players to see. If any three of the cards forms a set, then the first player to identify a set gets to pick up those cards, and the cards are replaced from the deck. If no sets are present, then three additional cards are dealt. If a set is identified at 15 cards, then the three removed cards are not replaced, and the count goes back down to 12. If no sets are present even at 15 cards, then three more cards are dealt to get up to 18, and so on. The game ends when the deck is empty and there are no more sets. 
+
+Write a program to simulate this game, play it 10,000 times, and find the proportion of games in which 18 cards appear at some point.
+
+**Hints:**
+
+(1) You can represent cards either as 4-tuples of `Int`s (like (1, 2, 1, 1)) or as a new type.  
+(2) It's going to be important to break your program up into small, dedicated functions. For example, you can write a function for returning the 81 total cards, a function for shuffling the deck, a function which takes three cards and returns true or false depending on whether they form a set, a function for dealing cards, a function for finding all the sets on the board, a function which takes a single turn by randomly selecting one of the available sets or adding three cards to the board if there are no sets, and finally a function which puts those functions together to play the game.  
+(3) Some Julia tips: 
+  - `randperm` generates random permutations, and you can index an array with the resulting list to shuffle it. 
+  - `vcat` concatenates two arrays.
+  - You probably want to use a four-dimensional array comprehension to generate the list of all cards, and you can index it with a colon to flatten it.
+  - To remove elements at positions `i`, `j`, and `k` from an array `A`, you can do `A[setdiff(1:end, (i,j,k))]`
+  - You can start with an empty array and grow it one element at a time inside a loop using this pattern:
+    ```julia 
+    A = []
+    for x in 1:10
+        push!(A, x)
+    end
+    ```
+  - You can use nested `for` loops to check all the triples to look for a set. There are more efficient algorithms, but that's OK.
+
+```{julia}
+using Random
+
+function set_deck() 
+    """
+    generate a new deck and shuffle it
+    """
+    deck = []
+    for num in 1:3
+        for col in 1:3
+            for shape in 1:3
+                for shade in 1:3
+                    card = (num,col,shape,shade)
+                    push!(deck,card) 
+                end
+            end
+        end
+    end
+    shuffle_deck = []
+    new_ind = randperm(length(deck))
+    for item in new_ind
+        push!(shuffle_deck,deck[item])
+    end
+    return shuffle_deck
+end
+
+
+function set_table(deck)
+    """
+    get 12 cards from the shuffled deck
+    """
+    table = deck[1:12]
+    return table
+end
+
+
+function add_cards(table, deck)
+    """
+    add three cards to table
+    """
+    for i in 1:3
+        table = push!(table,deck[i])
+    end
+    """
+    print("\n table\n")
+    print(table)
+    print("\ntable end\n")
+    """
+    return table
+end
+    
+function renew_deck(deck,n)
+    """
+    remove n cards from the shuffled deck, n = 12 or 3
+    """
+    if length(deck) == 3 
+        return []
+    else
+        deck = deck[n+1:end]
+        return deck
+    end
+end
+
+function is_set(three_cards)
+    """
+    check if an array of three cards could form a set or not
+    """
+    
+    """
+    print("\nthree cards:\n")
+    print(three_cards)
+    print("\n")
+    """
+    
+    for i in 1:4
+        list = [three_cards[1][i],three_cards[2][i],three_cards[3][i]]
+        if length(unique(list)) == 2
+            """
+            print("is not a set\n")
+            """
+            return false
+        end
+    end
+    """
+    print("\n******is a set*******\n")
+    """
+    return true
+end
+    
+function find_all_sets(table)
+    set_ind = []
+    for i in 1:length(table)-2
+        for j in i+1:length(table)-1
+            for k in j+1:length(table)
+                three_cards = [table[i],table[j],table[k]]
+                if is_set(three_cards)
+                    push!(set_ind,(i,j,k))
+                end
+            end
+        end
+    end
+    return set_ind
+end
+
+function game()
+    deck = set_deck()
+    """
+    print("\n shuffle deck\n")
+    print(deck)
+    print("\ndeck end\n")
+    """
+    table = set_table(deck)
+    deck = renew_deck(deck,12)
+    """
+    print("\n new deck\n")
+    print(deck)
+    print("\ndeck end\n")
+    print("\ntable\n")
+    print(table)
+    print("\ntable end\n")
+    """
+    
+
+    
+    while length(deck) !== 0
+        set_ind = find_all_sets(table)
+        """
+        print("\nset_ind******")
+        print(set_ind)
+        print("*********\nset_ind_end\n")
+        """
+        if length(set_ind) == 0
+            table = add_cards(table,deck)
+            deck = renew_deck(deck,3)
+    
+        else
+            ind = rand(1:length(set_ind))
+            table = table[setdiff(1:end,set_ind[ind])]
+            if length(table)<12
+                table = add_cards(table,deck)
+                deck = renew_deck(deck,3)
+            end
+        
+        end
+        if length(table) == 18
+            return true
+        end
+    end
+    if length(table) == 0
+        return true
+    end
+    return false
+    
+end
+
+count = 0
+for i in 1:10000
+    if game()
+        count = count + 1
+    end
+end
+print(count)
+print("\n")
+count/10000
+
+```
+
+## Problem 6   
+Show that if $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is linearly
+independent and
+$\{\mathbf{v}_1 + \mathbf{w}, \mathbf{v}_2 \ldots, \mathbf{v}_n\}$ is
+linearly dependent, then $\mathbf{w}$ is in the span of
+$\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$.
+
+
+*(DONE)Solution:*   
+$\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is l.i.,   
+then we have $\{\mathbf{v}_2, \ldots, \mathbf{v}_n\}$ is l.i. as well;   
+As $\{\mathbf{v}_1 + \mathbf{w}, \ldots, \mathbf{v}_n\}$ is l.d., and $\{\mathbf{v}_2, \ldots, \mathbf{v}_n\}$ is l.i.,   
+then $\mathbf{v}_1 + \mathbf{w}$ is a linear combination of subsets of $\{\mathbf{v}_2, \ldots, \mathbf{v}_n\}$,   
+so $\mathbf{v}_1 + \mathbf{w} = \mathbf{c}_2\mathbf{v}_2+\ldots+\mathbf{c}_n\mathbf{v}_n$,   
+$ \mathbf{w} = -\mathbf{v}_1 + \mathbf{c}_2\mathbf{v}_2+\ldots+\mathbf{c}_n\mathbf{v}_n $,   
+so $\mathbf{w}$ is a linear combination of $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$,  
+thus $\mathbf{w}$ is the span of $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$
+
+
+## Problem 7
+
+Show that if $A$ is a symmetric matrix, then 
+$$
+A = \lambda_1 \mathbf{u}_1 \mathbf{u}_1' + \cdots + \lambda_1 \mathbf{u}_n \mathbf{u}_n'
+$$
+where $\mathbf{u}_1, \ldots, \mathbf{u}_n$ is a list of linearly independent unit eigenvectors of $A$ and $\lambda_1, \ldots, \lambda_n$ are the corresponding eigenvalues. Does this formula hold if $A$ is diagonalizable but not symmetric?
+Hints: start with the orthogonal diagonalization of $A$ and use block multiplication.
+
+
+<img src="p7.png" width=350px>
+
+
+## Problem 8   
+**Use the result of the previous exercise to show that a quadratic function $f:\mathbb{R}^n \to \mathbb{R}$ has a local minimum at a critical point where the eigenvalues of the Hessian of $f$ are all positive.**
+
+
+
+<img src="p8.png" width=350px>
+
+
+## Problem 9
+**Suppose that $A = U \Sigma V'$ where $\Sigma$ is diagonal and $U$ and
+$V$ are orthogonal matrices. Show that the columns of $U$ are
+eigenvectors of $AA'$ and that the columns of $V$ are eigenvectors of
+$A'A$.**
+
+Hint: substitute $A = U \Sigma V'$ into the expressions $AA'$ and $A'A$.
+
+
+<img src="p9.png" width=350px>
+
+
+## Problem 10 
+The singular value decomposition can be used to identify the primary
+axes in a ellipsoidal point cloud. Run the following block to generate
+and plot a set of 100 points.
+
+```{julia}
+using LinearAlgebra 
+using Plots 
+using Random; Random.seed!(1234) # to make sure we get the same points
+numpoints = 100 
+T = [1 2; 0 1]
+P = T * randn(2, numpoints)
+scatter(P[1,:], P[2,:], aspect_ratio=:equal, legend=false)
+
+```
+
+Use Julia to compute the singular value decomposition $U \Sigma V'$ of
+$P$, and show visually that the columns of $U$ run along the axes of the
+ellipse that fits the point cloud (the one shown in the figure).
+
+Hint: `plot!([(a,b),(c,d)])` adds a line segment from the point $(a,b)$ to the point $(c,d)$ to
+the current plot. You’ll want to plot line segments representing both of
+the columns of $V$.
+
+```{julia}
+U,Σ,V = svd(P)
+
+plot!([(-7*U[1,1],-7*U[2,1]),(7*U[1,1],7*U[2,1])])
+plot!([(-2*U[1,2],-2*U[2,2]),(2*U[1,2],2*U[2,2])])
+```
+
+\newpage
